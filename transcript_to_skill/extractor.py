@@ -49,11 +49,20 @@ class ExtractionResult:
     examples: list[str] = field(default_factory=list)
 
 
-def extract(fragment: TranscriptFragment, skill_name_override: Optional[str] = None) -> ExtractionResult:
+def extract(fragment: TranscriptFragment, skill_name_override: Optional[str] = None, max_chars: int = 18000) -> ExtractionResult:
     """
     Dispatch to Gemini for extraction. Returns ExtractionResult.
     Tries once; on JSON failure, sends one repair pass.
     """
+    if max_chars and len(fragment.raw_text) > max_chars:
+        print(f"  [truncate] {len(fragment.raw_text):,} → {max_chars:,} chars")
+        fragment = TranscriptFragment(
+            raw_text=fragment.raw_text[:max_chars],
+            source_path=fragment.source_path,
+            source_title=fragment.source_title,
+            domain_hint=fragment.domain_hint,
+        )
+
     prompt = _build_prompt(fragment)
 
     raw = _invoke_gemini(prompt)
@@ -113,7 +122,7 @@ def _invoke_gemini(prompt: str) -> str:
             stdin=open(tmppath, "r"),
             capture_output=True,
             text=True,
-            timeout=180,
+            timeout=300,
         )
         if result.returncode != 0:
             raise RuntimeError(

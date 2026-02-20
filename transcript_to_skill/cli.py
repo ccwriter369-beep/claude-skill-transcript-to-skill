@@ -38,6 +38,13 @@ def main() -> None:
         action="store_true",
         help="Write SKILL.md locally but skip GitHub repo creation and push",
     )
+    parser.add_argument(
+        "--max-chars",
+        type=int,
+        default=18000,
+        metavar="N",
+        help="Truncate transcript to N chars before sending to Gemini (default: 18000)",
+    )
     args = parser.parse_args()
 
     print(f"Loading: {args.input}")
@@ -48,7 +55,7 @@ def main() -> None:
 
     print("\nExtracting via Gemini...")
     try:
-        result = extract(fragment, skill_name_override=args.name)
+        result = extract(fragment, skill_name_override=args.name, max_chars=args.max_chars)
     except Exception as e:
         print(f"\n[error] Extraction failed: {e}", file=sys.stderr)
         sys.exit(1)
